@@ -1,25 +1,44 @@
 package main
 
 import (
-	author3 "ca-library-app/internal/adapters/api/author"
-	book3 "ca-library-app/internal/adapters/api/book"
-	author2 "ca-library-app/internal/adapters/db/author"
-	book2 "ca-library-app/internal/adapters/db/book"
 	"ca-library-app/internal/composites"
-	"ca-library-app/internal/domain/author"
-	"ca-library-app/internal/domain/book"
+	"ca-library-app/internal/config"
+	"github.com/julienschmidt/httprouter"
+
+	"ca-library-app/pkg/logging"
+	"context"
 )
 
 func main() {
 	//entry point
-	bookComposite, err := composites.NewBookComposite()
-	if err != nil {
-		return nil
-	}
+	//logger initializing
+	logging.Init()
+	logger := logging.GetLogger()
 
-	authorComposite, err := composites.NewAuthorComposite()
+	logger.Info("config initializing")
+	cfg := config.GetConfig()
+
+	logger.Info("router initializing")
+	router := httprouter.New()
+
+	logger.Info("mongodb composite initializing")
+	mongoDBC, err := composites.NewMongoDBComposite(context.Background(), cfg.MongoDB.Host, cfg.MongoDB.Port, cfg.MongoDB.Username, cfg.MongoDB.Password, cfg.MongoDB.Database, cfg.MongoDB.AuthDB)
 	if err != nil {
-		return nil
+		logger.Fatal("mongodb composite failed")
 	}
+	logger.Info("book composite initializing")
+	bookComposite, err := composites.NewBookComposite(mongoDBC)
+	if err != nil {
+		logger.Fatal("book composite failed")
+	}
+	bookComposite.Handler.Register(router)
+	logger.Info("author composite initializing")
+	authorComposite, err := composites.NewAuthorComposite(mongoDBC)
+	if err != nil {
+		logger.Fatal("author composite failed")
+	}
+	authorComposite.Handler.Register(router)
+
+	//start
 
 }
