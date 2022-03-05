@@ -9,5 +9,5 @@ func main() {
 	//authorStorage := author2.NewStorage()
 	//authorService := author.NewService(authorStorage)
 	//authorHandler := author3.NewHandler(authorService)
-
+	//TODO release entry point
 }
